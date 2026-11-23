@@ -25,7 +25,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var islandClock: TextView
     private val apps = mutableListOf<AppItem>()
 
-    // Apps fixos no dock: troque pelos pacotes que você quiser
     private val dockPackages = listOf(
         "com.android.chrome",
         "com.whatsapp",
@@ -37,19 +36,29 @@ class MainActivity : AppCompatActivity() {
 
     private val clockTick = object : Runnable {
         override fun run() {
-            islandClock.text = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())
+            if (::islandClock.isInitialized) {
+                islandClock.text = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())
+            }
             handler.postDelayed(this, 1000)
         }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
-        islandClock = findViewById(R.id.islandClock)
-
-        loadApps()
-        setupGrid()
-        setupDock()
+        try {
+            setContentView(R.layout.activity_main)
+            islandClock = findViewById(R.id.islandClock)
+            loadApps()
+            setupGrid()
+            setupDock()
+        } catch (e: Throwable) {
+            val tv = TextView(this)
+            tv.setBackgroundColor(0xFF000000.toInt())
+            tv.setTextColor(0xFFFFFFFF.toInt())
+            tv.setPadding(40, 120, 40, 40)
+            tv.text = "ERRO:\n" + e.stackTraceToString()
+            setContentView(tv)
+        }
     }
 
     override fun onResume() {
@@ -101,7 +110,6 @@ class MainActivity : AppCompatActivity() {
                 }
                 setOnClickListener { launch(pkg) }
                 setOnTouchListener { v, e ->
-                    // efeito de zoom ao tocar, estilo dock do Mac
                     val s = if (e.action == MotionEvent.ACTION_DOWN) 1.25f else 1f
                     v.animate().scaleX(s).scaleY(s).setDuration(120).start()
                     false
